@@ -1,0 +1,938 @@
+
+	/* 
+	// ATOF() function processes only valid digits.
+	// So, I do not need to search end if number
+	int Length = 0;
+	LPCSTR ValueEnd = ValueStart;	
+	while (StrChrA(FLOAT_DATA, (char) *ValueEnd)) 
+	{
+		ValueEnd++;	
+		Length++;
+	}
+
+	LPSTR ValueString = (LPSTR) HeapAlloc(hHeap, HEAP_ZERO_MEMORY, Length + 1);
+    CopyMemory(ValueString, ValueStart, Length); */ 
+
+	/*
+	// Test triangle
+	glBegin(GL_TRIANGLES); 
+		glVertex3f(-50.0, -25.0, -10.0);
+		glVertex3f(0.0, 25.0, -10.0);
+		glVertex3f(50.0, -25.0, -10.0);
+	glEnd();
+	*/
+
+    /*
+    ВОПРОС: Зачем нужен ModelClass::ModelIndex?   
+    ОТВЕТ: Поскольку к каждому итему в ListBox модель привязана по указателю, то 
+		при удалении итема из ListBox непонятно, какой элемент удалять из 
+		ModelsList. Поэтому нужен ModelIndex, определяющий индекс модели в ModelsList.
+		
+		Привязывать модель по номеру в ModelsList можно, но в этом случае 
+		получается излишняя связанность ModelsList с ListBox, т. к. при удалении 
+		модели из ListBox (а значит и модели из ModelsList), появляется проблема 
+		переиндексации привязки моделей к итемам в ListBox. Это так себе. :)
+		
+	ВОПРОС: Почему существуют отдельно Model::ModelType и Model::ModelParams.ColorID?
+	ОТВЕТ: Что, если захочется сделать debris не цветом body, а тёмным (колёсами, например).
+		Или сделать body как стекло цветом? Или сделать колёса цветом body? Мало ли.
+		
+	ВОПРОС: Чем отличается функция Model::MakeVerticesNormals() от Model::MakeVerticesNormalsEdged()?
+	ОТВЕТ: Функция Model::MakeVerticesNormals() рассчитывает по одной нормали для каждой вершины,
+		беря среднюю нормаль между всеми нормалями к полигонам (faces normals), в состав 
+		которых входит данная вершина.
+		
+		Эффект острых граней - нет плавного перехода цвета между двумя полигонами с общей гранью.
+		Это необходимо в случаях, когда угол между полигонами более определенной величины. В M_TOOL 
+		предельный угол обычно равен 60 градусам.
+		
+		Функция Model::MakeVerticesNormalsEdged() может создать эффект острых граней за счёт того, что
+		одной вершине будет "соответствовать" несколько нормалей в зависимости от того, какой полигон
+		рассматривается. Благодаря этому получается независимая закраска каждого полигона. Такого же эффекта 
+		можно достигнуть, если добавлять не нормали, а добавлять дублирующую вершину, но только с одной 
+		нормалью, которая будет равна нормали к полигону. Ясно, что добавление дополнительных нормалей 
+		предпочтительнее, чем добавление новой вершины и нормали.
+	
+	ВОПРОС: Что это за фигня?
+	
+		// M_TOOL features
+		#define USE_M_TOOL_FEATURE_GEOMETRY
+		#define USE_M_TOOL_FEATURE_BOUND
+	
+	ОТВЕТ: В процессе написания программы я нашёл некоторые ошибки (или я ошибаюсь?) в оригинальной 
+		программе M_TOOL при вычислении геометрических параметров модели. Если необходимо добиться 
+		максимальной похожести моделей относительно старой программы M_TOOL, то необходимо эти флаги 
+		определить. 
+		
+		Если оба эти флага не определены, то программа будет работать (на мой взгляд) без ошибок в 
+		вычислениях. При этом модели, на мой взляд, физически ведут себя более естественно. Однако, 
+		это может существенно осложнить игровой процесс.
+		
+		Рекомендуется оба этих флага определить.
+    */
+    
+    ----------------------------------------------------
+    --- !!! БЕЗ ГЛОБАЛЬНОЙ ОПТИМИЗАЦИИ ГЕОМЕТРИИ !!! ---
+    ----------------------------------------------------
+    
+    READY (by Time): 
+    - Придуман интерфейс
+    - Главное окно готово
+    - Сделан OpenGLWindow
+    - Сделан AsciiImport
+    - Реализован класс модели
+    - Реализован класс списка моделей
+    - Сделано LoadASE и описана модель
+    - Рисование моделей
+    - Расчёт нормалей для asc
+    - Модуль открытия\сохранения файла(ов)
+    - Загрузка нескольких файлов
+    - Реализована загрузка ASC
+    - Автоматический тип в зависимости от имени
+    - Добавление в лист бокс 
+    - Тип параметров модели
+    - Сортировка по типу
+    - Правильное удаление из ListBox
+    - Сделано бросание файла(ов)
+    - Раскраска лист бокс от типа
+    - Множественное выделение в ListBox
+    - Множественное выделение в Preview
+    - Зум (колёсико)
+    - Передвижение модели (всей)
+    - Цетрирование модели (всей)
+    - Раскраска модели по фактическому типу
+    - Автовращение (отн. верт. оси модели)
+    - Поворот мышкой (отн. гор. оси модели)
+    - Форма параметров модели (связь с ListBox)
+    - Форма параметров мехоса
+    - Куда вставить body color & shift? - DONE
+    - Структуры параметров для сохранения
+    - Popup меню для Listbox 
+    - Расчёты (УЖОСНАХ! ДАЁШЬ НОВЫЙ ФОРМАТ С ОПИСАНИЕМ!)
+    - Сохранение C3D (геометрия + физические)
+    - z_list >>> DONE!
+	- Сохранение корпуса
+    - Сохранение колёс
+    - Сохранение обломков
+    - Сохранение слотов
+    - Корявое сохранение пофиксено (порядок вершин обратный)
+    - Добавка нормалей при большой разнице между нормалями полигонов (c оптимизацией)
+    - Оптимизация модели (вершины, полигоны, нормали)
+    - Strong memory checks in loading process
+    - Переделать bound (сделать морфинг) >>> всё еще не готов (чего там с цветами?) - SEEMS DONE
+    
+    TODO (by Priority):  
+    - Деление длинных граней
+    - Загрузка LST
+    - Cохранение LST
+    - Автоподгон положения камеры и размера (???)
+    
+    
+    // Мехосы (M_TOOL code)
+    1. Объем правильно считается только для выпуклых моделей
+    2. При создании в 3D редакторе ось мехоса должна совпадать с
+       противоположным направлением оси Y
+    
+    
+    
+    
+    Relly looong stuff:
+    
+	/*
+	JEEP	Iron Shadow m1
+
+	// Base params
+	scale_size:		0.24
+	scale_bound:		0.8
+	scale_box:		0.8
+	z_offset_of_mass_center:		-60.260000
+
+	// Car's params
+	speed_factor:		0.9
+	mobility_factor:		0.9
+
+	// Devices params
+	water_speed_factor:		0.5
+	air_speed_factor:		0.5
+	underground_speed_factor:		0.5
+
+	// Ship's params
+	k_archimedean:		0.467023
+	k_water_traction:		1.32564
+	k_water_rudder:		2.97916e-006
+
+	// Grader's params
+	TerraMoverSx:		1.
+	TerraMoverSy:		0.907029
+	TerraMoverSz:		0.556837
+
+	// Defense
+	FrontDefense:		400
+	BackDefense:		250
+	SideDefense:		80
+	UpperDefense:		50
+	LowerDefense:		20
+
+	// Ram Power
+	FrontRamPower:		400
+	BackRamPower:		1
+	SideRamPower:		1
+	UpperRamPower:		1
+	LowerRamPower:		1
+	*/    
+
+// ---------------------------------------------------------------------------------	
+
+	/*
+	// Some stupid code organization from M_TOOL.
+	// Redisigned to m_tool_new...
+			
+			// I need to keep offset of the
+			// wheel for a while as in M_TOOL
+			KeepOffset[0] = Wheel.Offset[0];
+			KeepOffset[1] = Wheel.Offset[1];
+			KeepOffset[2] = Wheel.Offset[2];
+
+			// Move to global center to
+			// calculate rMax correctly
+			Wheel.SetOffset(Wheel.Offset);
+			
+			// Restore original offset.
+			// Wheel.Offset was set to 0.0 in
+			// previous function. But M_TOOL
+			// tells me to restore it to 
+			// original state. Note, that 
+			// it is incorrect, because I
+			// will not affect vertices, which
+			// was moved in previous function.
+			// I.e. now Wheel.Offset will not 
+			// equal to real offset of the wheel
+			Wheel.Offset[0] = KeepOffset[0];
+			Wheel.Offset[1] = KeepOffset[1];
+			Wheel.Offset[2] = KeepOffset[2];
+	*/
+
+// ---------------------------------------------------------------------------------
+
+		/*
+		// REPLACED IN: BOOL ModelsStore::LoadASE(const char *FileName)
+		// BY MATH CALCULATION
+		// Read normals list...
+		TRY(Import.FindName(Import.BufferPosition, NAME_MESH_NORMALS));
+
+		Index = 0;
+		for (int i = 0; i < m -> FacesNormalsCount; i++)
+		{
+			TRY(Import.FindName(Import.BufferPosition, NAME_MESH_FACENORMAL));
+			Index = (int) Import.GetDouble(Import.BufferPosition);
+
+			Vertex &fn = m -> FacesNormals[Index];
+
+			fn[0] = (GLfloat) Import.GetDouble(Import.BufferPosition);
+			fn[1] = (GLfloat) Import.GetDouble(Import.BufferPosition);
+			fn[2] = (GLfloat) Import.GetDouble(Import.BufferPosition);
+		}
+		*/
+		
+// ---------------------------------------------------------------------------------
+
+// TYPES FOR FUNCTION BELOW
+
+enum CheckPlanes 
+{
+	PLANE_XY, 
+	PLANE_YZ, 
+	PLANE_ZX
+};
+
+// Results of projection
+struct ProjectionResultsStruct
+{
+	double T0; 
+	double Tx;
+	double Ty;
+	double Txx;
+	double Tyy;
+	double Txy;
+};
+
+// Params from projection
+struct ProjectionParamsStruct
+{
+	// Input
+	int SizeX;
+	int SizeY;
+	int SizeZ;
+	
+	int IndexX;
+	int IndexY;
+	int IndexZ;
+	float Scale;
+	BOOL InvertY;
+	float zLevelMax;
+	CheckPlanes Plane;
+	BOOL OnlyUpperBuffer;
+	Vertex *LocalVertices;
+
+	// Output
+	struct ProjectionResultsStruct prs;
+};
+		
+// Project model in Z-direction and return some values.
+// Different planes are spported!
+BOOL Model::CalculateProjection(ProjectionParamsStruct &pps)
+{
+	int SizeX = pps.SizeX;
+	int SizeY = pps.SizeY;
+	int SizeZ = pps.SizeZ;
+
+	int IndexX = pps.IndexX;
+	int IndexY = pps.IndexY;
+	int IndexZ = pps.IndexZ;
+	
+	BOOL InvertY = pps.InvertY;
+	CheckPlanes Plane = pps.Plane;
+	
+	float Scale = pps.Scale;
+	Vertex *LocalVertices = pps.LocalVertices;
+	BOOL OnlyUpperBuffer = pps.OnlyUpperBuffer;
+
+	int ModelArea = SizeX * SizeY;
+	float *Upper = new float [ModelArea];
+	float *Lower = new float [ModelArea];
+	
+	float zLevelMax = -FLT_MAX;
+
+	// Not enougth memory
+	if ((!Upper) || (!Lower))
+	{
+		if (Upper) delete [] Upper;
+		if (Lower) delete [] Lower;
+		
+		return FALSE;
+	}
+
+	// Prepare buffers
+	for (int j = 0; j < SizeY; j++)
+	{
+		int BufferLine = j * SizeX;
+
+		for (int i = 0; i < SizeX; i++)
+		{
+			int BufferPos = BufferLine + i;
+			
+			Upper[BufferPos] = -FLT_MAX;
+			Lower[BufferPos] =  FLT_MAX;
+		}
+	}
+
+	// Go! For each face...
+	for (int k = 0; k < FacesCount; k++)
+	{
+		Face &f = Faces[k];
+		Vertex &fn = FacesNormals[k];
+
+		// Look, fn[2] - size of the normal in Z-direction
+		// So, this will check wheter face is perpendicular
+		if (abs(fn[IndexZ]) < FLT_EPSILON) continue;
+
+		// Links to face vertices
+		Vertex *F0, *F2;
+
+		F0 = &LocalVertices[f[0]];
+		F2 = &LocalVertices[f[2]];
+
+		Vertex *A, *B, *C;
+		B = &LocalVertices[f[1]];
+
+		// Are A, B, C in right order?
+		if (fn[IndexZ] > 0.0) { A = F0; C = F2; }
+		else { A = F2; C = F0; }
+
+		FaceBox fb;
+		MakeFaceBox(*A, *B, *C, fb);
+		
+		int FaceSizeX = Round(fb.Size[IndexX]);
+		int FaceSizeY = Round(fb.Size[IndexY]);
+		
+		int FaceOffsetX = Round(fb.Min[IndexX]);
+		int FaceOffsetY = Round(fb.Min[IndexY]);
+
+		float d = - (fn[0] * (*A)[0] + 
+					 fn[1] * (*A)[1] + 
+					 fn[2] * (*A)[2]);
+		
+		// Scan face field in both directions
+		for (int j = 0; j <= FaceSizeY; j++)
+		{
+			int y = FaceOffsetY + j;
+
+			for (int i = 0; i <= FaceSizeX; i++)
+			{
+				int x = FaceOffsetX + i;
+
+				Vertex P;
+				P[IndexX] = (float) x;
+				P[IndexY] = (float) y;
+
+				// This is FLAT check. 
+				// Z-value of point P not needed
+				if (PtInTriangle(*A, *B, *C, P, Plane) >= 0)
+				{
+					int BufferPos;
+					if (InvertY) BufferPos = (SizeY - 1 - y) * SizeX + x;
+					else BufferPos = y * SizeX + x;
+					
+					float zValue = - (d + fn[IndexX] * P[IndexX] + fn[IndexY] * P[IndexY]) / fn[IndexZ];
+
+					// Just one bad surface check...
+					if (zValue < fb.Min[IndexZ]) zValue = fb.Min[IndexZ];
+					if (zValue > fb.Max[IndexZ]) zValue = fb.Max[IndexZ];
+
+					// Place zValue to buffers
+					float &UpperValue = Upper[BufferPos];
+					float &LowerValue = Lower[BufferPos];
+
+					if (zValue > UpperValue) UpperValue = zValue;
+					if (zValue < LowerValue) LowerValue = zValue;
+					
+					// For normalization to 0..255
+					if (zValue > zLevelMax) zLevelMax = zValue;
+				}
+			}
+		}
+	}
+
+	// Float, double... 
+	// I like floats...
+	double T0 = 0.0;
+	double Tx = 0.0;
+	double Ty = 0.0;
+
+	double Txx = 0.0;
+	double Tyy = 0.0;
+	double Txy = 0.0;
+
+	double SizeHalfX = SizeX / 2;
+	double SizeHalfY = SizeY / 2;
+	double SizeHalfZ = SizeZ / 2;
+
+	// Ready to calculate params
+	for (int j = 0; j < SizeY; j++)
+	{
+		int BufferLine = j * SizeX;
+
+		for (int i = 0; i < SizeX; i++)
+		{
+			int BufferPos = BufferLine + i;
+			
+			float &UpperValue = Upper[BufferPos];
+			float &LowerValue = Lower[BufferPos];
+
+			// Min value for buffers is 0, it's achieved
+			// because of appropriate moving before:
+			//		VectorMinusVector(v, Min);
+
+			// What if model is just plane at Z = 0?
+			// We can be sure, that it will be processed
+			// right if set empty <bufer>Values to (-1)
+			if (UpperValue == -FLT_MAX) UpperValue = -1.0;
+			if (LowerValue ==  FLT_MAX) LowerValue = -1.0;
+
+			// Scaled back Upper and Lower values
+			double sUpper = (UpperValue - SizeHalfZ) / Scale;
+			double sLower = (LowerValue - SizeHalfZ) / Scale;
+
+			// Preparing
+			double zDelta = 0.0;
+			if (OnlyUpperBuffer) zDelta = sUpper;
+			else zDelta = sUpper - sLower;
+
+			// Null thickness surface check.
+			// See comments about (-1) a bit above
+			if ((UpperValue - LowerValue < FLT_EPSILON) && 
+				(UpperValue != -1.0)) zDelta = NULL_THICKNESS_WEIGHT;
+
+			// Go!
+			if (zDelta > 0.0)
+			{
+				double x = (i - SizeHalfX) / Scale;
+				double y = (j - SizeHalfY) / Scale;
+
+				T0 += zDelta;
+				Tx += zDelta * x;
+				Ty += zDelta * y;
+
+				Txx += zDelta * x * x;
+				Tyy += zDelta * y * y;
+				Txy += zDelta * x * y;
+			}			
+		}
+	}
+
+	// Result
+	pps.prs.T0 = T0;
+	pps.prs.Tx = Tx;
+	pps.prs.Ty = Ty;
+	
+	pps.prs.Txx = Txx;
+	pps.prs.Tyy = Tyy;
+	pps.prs.Txy = Txy;
+
+	/*
+	// DEBUG START
+	float zScale = 1.0;
+	if (zLevelMax > 0.0) zScale = 255 / (zLevelMax + 1);
+	
+	// DEBUG
+	BYTE *cUpper = new BYTE [ModelArea];
+	BYTE *cLower = new BYTE [ModelArea];
+
+	// DEBUG
+	for (int j = 0; j < SizeY; j++)
+	{
+		for (int i = 0; i < SizeX; i++)
+		{
+			int BufferPos = j * SizeX + i;
+			
+			if (Upper[BufferPos] == -FLT_MAX) cUpper[BufferPos] = 0;
+			else cUpper[BufferPos] = Round((Upper[BufferPos] + 1) * zScale);
+
+			if (Lower[BufferPos] ==  FLT_MAX) cLower[BufferPos] = 0;
+			else cLower[BufferPos] = Round((Lower[BufferPos] + 1) * zScale);
+		}
+	}
+
+	// DEBUG
+	HANDLE hFile = CreateFileA("H:\\out_vangers.raw", GENERIC_WRITE, 0, NULL, 
+		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD w;
+		WriteFile(hFile, (LPVOID) cUpper, ModelArea * sizeof(BYTE), &w, NULL);
+		WriteFile(hFile, (LPVOID) cLower, ModelArea * sizeof(BYTE), &w, NULL);
+
+		CloseHandle(hFile);
+	}
+
+	// DEBUG
+	if (cUpper) delete [] cUpper;
+	if (cLower) delete [] cLower;
+	// DEBUG END
+	*/
+
+	if (Upper) delete [] Upper;
+	if (Lower) delete [] Lower;
+
+	return TRUE;
+};
+*/		
+
+
+// Function USED ONLY WITH FUNCTION ABOVE
+BOOL Model::CalculatePhysicalParams(PhysicalParamsStruct &pps, BOOL OnlyUpperBuffer)
+{	
+	// Vertices array for physical calculations
+	Vertex *LocalVertices = new Vertex [VerticesCount];
+	if (!LocalVertices) return FALSE;
+
+	// Copy existing geometry
+	CopyMemory(LocalVertices, Vertices, VerticesCount * sizeof(Vertex));
+	
+	// -----------------------------
+	// USE ONLY LOCALVERTICES BELOW!
+	// -----------------------------
+
+	// Total plain sizes of the model
+	float FloatSizeX = (Max[0] - Min[0]);
+	float FloatSizeY = (Max[1] - Min[1]);
+	float FloatSizeZ = (Max[2] - Min[2]);
+
+	// Null or broken buffers...
+	if ((FloatSizeX < FLT_EPSILON) || 
+		(FloatSizeY < FLT_EPSILON)) return FALSE;
+
+	// Resize for accuracy and
+	// to limit calculation time
+	const int MAX_SIZE = 250;
+
+	float MaxSize = FloatSizeX;
+	if (FloatSizeY > MaxSize) MaxSize = FloatSizeY;
+	if (FloatSizeZ > MaxSize) MaxSize = FloatSizeZ;
+
+	float PlainScale = MAX_SIZE / MaxSize;
+
+	// Size of the model
+	int SizeX = Round((Max[0] - Min[0]) * PlainScale) + 1;
+	int SizeY = Round((Max[1] - Min[1]) * PlainScale) + 1;
+	int SizeZ = Round((Max[2] - Min[2]) * PlainScale) + 1;
+
+	// Preparing LocalVertices. 
+	// Applying offset and scaling
+	for (int i = 0; i < VerticesCount; i++)
+	{
+		Vertex &v = LocalVertices[i];
+
+		// Move points to right position
+		// and scale them as needed
+		VectorMinusVector(v, Min);
+		VectorMultiplyNumber(v, PlainScale);
+	}	
+
+	// SEEMS BUFFERS MUST BE READY HERE!
+	// START TO CALCULATE PHYSICAL PARAMS! YEAH!
+
+	ProjectionResultsStruct ValuesX, ValuesY, ValuesZ;
+
+	ProjectionParamsStruct prps;
+	prps.LocalVertices = LocalVertices;
+	prps.Scale = PlainScale;
+	prps.InvertY = FALSE;
+
+	// XY PLANE
+	prps.SizeX = SizeX;
+	prps.SizeY = SizeY;
+	prps.SizeZ = SizeZ;
+
+	prps.IndexX = 0;
+	prps.IndexY = 1;
+	prps.IndexZ = 2;
+	prps.Plane = PLANE_XY;
+
+	prps.OnlyUpperBuffer = OnlyUpperBuffer;
+	CalculateProjection(prps);
+	ValuesZ = prps.prs;
+
+	// YZ PLANE
+	prps.SizeX = SizeZ;
+	prps.SizeY = SizeY;
+	prps.SizeZ = SizeX;
+
+	prps.IndexX = 2;
+	prps.IndexY = 1;
+	prps.IndexZ = 0;
+	prps.Plane = PLANE_YZ;
+
+	prps.OnlyUpperBuffer = FALSE;
+	CalculateProjection(prps);
+	ValuesX = prps.prs;
+
+	// ZX PLANE
+	prps.SizeX = SizeX;
+	prps.SizeY = SizeZ;
+	prps.SizeZ = SizeY;
+
+	prps.IndexX = 0;
+	prps.IndexY = 2;
+	prps.IndexZ = 1;
+	prps.Plane = PLANE_ZX;
+	prps.InvertY = TRUE;
+
+	prps.OnlyUpperBuffer = FALSE;
+	CalculateProjection(prps);
+	ValuesY = prps.prs;
+
+	// Calculation Go!
+	pps.Volume = ValuesZ.T0;
+	
+	// Leave as is
+	double Density = 1.0;
+	double Mass = pps.Volume;
+
+	// Mass center
+	DBV &mc = pps.MassCenter;
+
+	// One minus...
+	mc[0] = ValuesZ.Tx / pps.Volume;
+	mc[1] = ValuesZ.Ty / pps.Volume;
+	mc[2] = ValuesX.Tx / pps.Volume;
+
+	double Txx = ValuesZ.Txx;
+	double Tyy = ValuesZ.Tyy;
+	double Tzz = ValuesX.Txx;
+
+	double Tyz = ValuesX.Txy;
+	double Tzx = ValuesY.Txy;
+	double Txy = ValuesZ.Txy;
+
+	/*    
+		0 1 2
+	    -----
+	0 | 0 1 2 
+	1 | 3 4 5
+	2 | 6 7 8
+			  */
+	
+	// Inertia tensor
+	DBM &J = pps.IntertiaTensor;
+
+	J[0] = Density * (Tyy + Tzz);
+	J[4] = Density * (Tzz + Txx);
+	J[8] = Density * (Txx + Tyy);
+	
+	J[1] = J[3] = -Density * Txy;
+	J[5] = J[7] = -Density * Tyz;
+	J[2] = J[6] = -Density * Tzx;
+
+	// Translate inertia tensor to mass center
+	J[0] -= Mass * (mc[1] * mc[1] + mc[2] * mc[2]);
+	J[4] -= Mass * (mc[2] * mc[2] + mc[0] * mc[0]);
+	J[8] -= Mass * (mc[0] * mc[0] + mc[1] * mc[1]);
+	
+	J[1] = J[3] += Mass * mc[0] * mc[1]; 
+	J[5] = J[7] += Mass * mc[1] * mc[2]; 
+	J[2] = J[6] += Mass * mc[2] * mc[0]; 
+
+	// Delete local data copy
+	if (LocalVertices) delete [] LocalVertices;
+
+	return TRUE;
+};
+
+// ---------------------------------------------------------------------------------
+
+				BOOL NormalPresent = FALSE;
+				UINT NormalPresentIndex = 0;
+
+				// Add only unique normals
+				for (int k = 0; k < NewVerticesNormalsCount; k++)
+				{
+					Vertex &vn = NewVerticesNormals[i];
+
+					if (VectorSameVector(vn, VertexNormal, 0.1))
+					{
+						NormalPresentIndex = k;
+						NormalPresent = TRUE;
+						break;
+					}
+				}
+				
+				if (!NormalPresent)
+				{
+					// Add new normal
+					Vertex &vn = NewVerticesNormals[NewVerticesNormalsCount];
+
+					vn[0] = VertexNormal[0];
+					vn[1] = VertexNormal[1];
+					vn[2] = VertexNormal[2];
+
+					// Set index of the face-normal
+					Face &f = Faces[idx1];
+					f.Normals[norm1] = NewVerticesNormalsCount;
+
+					// Increase counter
+					NewVerticesNormalsCount++;
+				}
+				else
+				{
+					// Normal present
+					Face &f = Faces[idx1];
+					f.Normals[norm1] = NormalPresentIndex;
+				}
+
+// ---------------------------------------------------------------------------------
+
+// Function writes header of the file and all body parts.
+// Also function RETURNS Offset vector of the model
+BOOL ModelsStore::SaveBinaryBody(HANDLE hFile, Vertex &OutOffset, int *TypesCount, Model *BodyBound, float &OutScale)
+{
+	// -------------------------------
+	// MAKE BODY MODEL WITH ALL WHEELS
+	// -------------------------------
+
+	int ListLen = GetBodyModelsListLen(TRUE);
+	if (!ListLen) return FALSE;
+	
+	Model **BodyModels = new Model * [ListLen];
+	if (!BodyModels) return FALSE;
+
+	// List of the body parts
+	BuildBodyModelsList(BodyModels, TRUE);
+
+	Model Body;
+	Body.JoinModels(BodyModels, ListLen);
+
+	// Don't need any more
+	delete [] BodyModels;
+	
+	Vertex WheelsOffset, MinusOffset;
+	int WheelsCount = GetWheelsModelsOffset(WheelsOffset);
+	
+	if (WheelsCount > 0)
+	{
+		MinusOffset[0] = WheelsOffset[0];
+		MinusOffset[1] = WheelsOffset[1];
+	}
+	else
+	{
+		MinusOffset[0] = Body.Offset[0];
+		MinusOffset[1] = Body.Offset[1];
+	}
+
+	MinusOffset[2] = Body.Offset[2];
+
+	// Return offset
+	OutOffset[0] = MinusOffset[0];
+	OutOffset[1] = MinusOffset[1];
+	OutOffset[2] = MinusOffset[2];
+
+	// Move to global center
+	// before calculating radius
+	Body.SetOffset(MinusOffset);
+
+	// Return scale
+	float Radius = Body.CalculateRadius(FALSE);
+	OutScale = 124.0f / Radius;
+
+	// Apply scale
+	Body.SetScale(OutScale);
+	
+//-------
+	Body.OptimizeGeometry();
+
+	Model *m = Models.AddModel();
+	Body.CloneModel(m);
+	
+	m -> SetModelName("clonedbody");
+	m -> ModelType = MODEL_UNKNOWN;
+	AddListBoxModel(m);
+//-------
+	
+
+	// Some needed values
+	Vertex BodyMax = {Body.Max[0], Body.Max[1], Body.Max[2]};
+	float BodyRadius = Body.CalculateRadius(FALSE);
+	Body.MakeModelBound(BodyBound, 1);
+
+	// Don't need geometry any more.
+	// No further work with Body
+	Body.EmptyModel();
+
+	// ------------------------------------
+	// MAKE BODY MODEL WITHOUT STEER WHEELS
+	// ------------------------------------
+
+	ListLen = GetBodyModelsListLen(FALSE);
+	if (!ListLen) return FALSE;
+
+	BodyModels = new Model * [ListLen];
+	if (!BodyModels) return FALSE;
+
+	// List of the body parts
+	BuildBodyModelsList(BodyModels, FALSE);
+
+	Model Body2;
+	Body2.JoinModels(BodyModels, ListLen);
+	Body2.SetOffset(MinusOffset);
+	Body2.SetScale(OutScale);
+
+	// Required by M_TOOL
+	Body2.Offset[0] = 0.0;
+	Body2.Offset[1] = 0.0;
+	Body2.Offset[2] = 0.0;
+	
+	// Don't need any more
+	delete [] BodyModels;
+
+	BOOL StatusOk = Body2.SaveBinary(hFile);	
+
+	// -------------------
+	// SAVE MECHOUS PARAMS
+	// -------------------
+
+	if (StatusOk)
+	{
+		MechousSavingParamsStruct mss;
+		
+		mss.xMax = Round(BodyMax[0]);
+		mss.yMax = Round(BodyMax[1]);
+		mss.zMax = Round(BodyMax[2]);
+
+		mss.BodyColorShift = Round(MechousParams[MECHOUS_PARAM_COLOR_SHIFT]);
+		mss.BodyColorOffset = Round(MechousParams[MECHOUS_PARAM_COLOR_OFFSET]);
+
+		mss.rMax = Round(BodyRadius);
+		mss.DebrisCount = TypesCount[MODEL_DEBRIS];
+		mss.WheelsCount = WheelsCount;
+
+		DWORD w = 0;
+		DWORD Size = sizeof(MechousSavingParamsStruct);
+		WriteFile(hFile, (LPVOID) &mss, Size, &w, NULL);
+	
+		BOOL StatusOk = (w == Size);
+	}
+
+	return StatusOk;
+};
+
+// ---------------------------------------------------------------------------------
+
+// MAKING BOUNDING BOX
+
+	// Calculate coordinates
+	for (int j = 0; j < Segments + 1; j++)
+	for (int i = 0; i < Segments + 1; i++)
+	{
+		int Index = j * (Segments + 1) + i;
+
+		Vertex &XY_Zmax = m -> Vertices[Index + 0 * PointsOnSide];
+		Vertex &ZX_Ymax = m -> Vertices[Index + 1 * PointsOnSide];
+		Vertex &YZ_Xmax = m -> Vertices[Index + 2 * PointsOnSide];
+
+		Vertex &XY_Zmin = m -> Vertices[Index + 3 * PointsOnSide];
+		Vertex &ZX_Ymin = m -> Vertices[Index + 4 * PointsOnSide];
+		Vertex &YZ_Xmin = m -> Vertices[Index + 5 * PointsOnSide];
+
+		Vertex *mVertex = &(m -> Vertices[Index]);
+
+		// XY PLANE (Z-MAX)
+		XY_Zmax[0] = Max[0] - i * dx;
+		XY_Zmax[1] = Min[1] + j * dy;
+		XY_Zmax[2] = Max[2];
+		mVertex += PointsOnSide;
+
+		// XY PLANE (Z-MIN)
+		XY_Zmin[0] = Min[0] + i * dx;
+		XY_Zmin[1] = Min[1] + j * dy;
+		XY_Zmin[2] = Min[2];
+
+		// ZX PLANE (Y-MAX)
+		ZX_Ymax[0] = Min[0] + i * dx;
+		ZX_Ymax[1] = Max[1];
+		ZX_Ymax[2] = Min[2] + j * dz;
+
+		// ZX PLANE (Y-MIN)
+		ZX_Ymin[0] = Min[0] + i * dx;
+		ZX_Ymin[1] = Min[1];
+		ZX_Ymin[2] = Max[2] - j * dz;
+
+		// YZ PLANE (X-MAX)
+		YZ_Xmax[0] = Max[0];
+		YZ_Xmax[1] = Max[1] - i * dy;
+		YZ_Xmax[2] = Min[2] + j * dz;
+
+		// YZ PLANE (X-MIN)
+		YZ_Xmin[0] = Min[0];
+		YZ_Xmin[1] = Min[1] + i * dy;
+		YZ_Xmin[2] = Min[2] + j * dz;
+	}
+
+	// Iteration variable
+	Face *mFaces = m -> Faces;
+
+	// Construct faces
+	for (int j = 0; j < Segments; j++)
+	for (int i = 0; i < Segments; i++)
+	{
+		int Index = j * (Segments + 1) + i;
+		
+		for (int k = 0; k < 6; k++)
+		{
+			FacesFromRect(*mFaces, *(mFaces + 1), Index, Segments);
+			Index += PointsOnSide;
+			mFaces += 2;
+		}
+	}
+	
+// ---------------------------------------------------------------------------------	

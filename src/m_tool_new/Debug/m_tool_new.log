@@ -1,0 +1,29 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppCommon.targets(36,5): warning MSB4211: The property "IntermediateOutputPath" is being set to a value for the first time, but it was already consumed at "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppCommon.targets (35,5)".
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(337,5): warning MSB4211: The property "CleanFile" is being set to a value for the first time, but it was already consumed at "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppCommon.targets (35,5)".
+cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  PreviewWindow.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  OpenSaveModule.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  OpenGLWindow.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\OpenGLWindow.cpp(2,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  ModelsList.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  ModelSettings.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  ModelClass.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.cpp(4,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  MechousSettings.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  MainWindow.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  Main.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  ListBoxWindow.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  Globals.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  ExportDialog.cpp
+C:\Users\Vadim\Downloads\Vangers\m_tool_new_pack_04\src\m_tool_new\ModelClass.h(5,10): fatal error C1083: Cannot open include file: 'Gl.h': No such file or directory
+  AsciiImport.cpp
+  Generating Code...
